@@ -16,15 +16,22 @@ The planned StateGraph flow can be visualised as follows:
 
 ```mermaid
 graph TD
-    A[RepoInvestigator] --> C[EvidenceAggregator]
-    B[DocAnalyst] --> C[EvidenceAggregator]
-    C --> D[Prosecutor]
-    C --> E[Defence]
-    C --> F[TechLead]
-    D --> G[OpinionsAggregator]
-    E --> G[OpinionsAggregator]
-    F --> G[OpinionsAggregator]
-    G --> H[ChiefJustice]
+    A[RepoInvestigator] -->|commits, graph_flags| C[EvidenceAggregator]
+    B[DocAnalyst] -->|keywords, cross_refs| C[EvidenceAggregator]
+
+    %% Evidence fan-out to judges
+    C -->|EvidenceBundle + confidence| D[Prosecutor]
+    C -->|EvidenceBundle + confidence| E[Defence]
+    C -->|EvidenceBundle + confidence| F[TechLead]
+
+    %% Judges fan-in
+    D -->|JudicialOpinion| G[OpinionsAggregator]
+    E -->|JudicialOpinion| G[OpinionsAggregator]
+    F -->|JudicialOpinion| G[OpinionsAggregator]
+
+    %% Final synthesis
+    G -->|SynthesisedReport| H[ChiefJustice]
+
 ```
 
 This diagram shows the current detective fan‑out/fan‑in pattern, followed by the planned judicial fan‑out/fan‑in and final synthesis. It illustrates how the project will evolve from the interim submission to the complete courtroom pipeline.
