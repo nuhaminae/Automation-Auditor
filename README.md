@@ -54,7 +54,6 @@ AUTOMATION-AUDITOR/
 │   │   └── repo_tools.py
 │   ├── graph.py
 │   └── main.py
-│   └── technical.md
 ├── tests/                           # Test cases
 │   └── test_dummy.py                # Placeholder test file
 ├── .env                             # Environment variables (not committed)
@@ -64,9 +63,9 @@ AUTOMATION-AUDITOR/
 ├── .pre-commit-config.yaml          # Pre-commit hooks configuration  
 ├── .yamllint.yml                    # YAML linting configuration
 ├── format.ps1                       # PowerShell script for code formatting
-├── pyproject.toml                   # Linting and formatting configuration
+├── pyproject.toml                   # Dependency and tool configuration
 ├── README.md                        # Project overview
-└── requirements.txt                 # Python dependencies
+└── uv.lock                          # Dependency lock file
 ```
 
 ---
