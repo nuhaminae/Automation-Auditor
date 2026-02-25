@@ -7,6 +7,7 @@ from typing import Dict, List
 from docling.datamodel.document import Document
 from docling.document_converter import PdfParser
 
+
 def ingest_pdf(path: str) -> Document:
     """
     Ingest a PDF report using Docling.
@@ -28,6 +29,7 @@ def ingest_pdf(path: str) -> Document:
     parser = PdfParser()
     doc = parser.parse(path)
     return doc
+
 
 def chunk_document(doc: Document, chunk_size: int = 500) -> List[str]:
     """
