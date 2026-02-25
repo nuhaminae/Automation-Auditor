@@ -8,12 +8,12 @@ from docling.datamodel.document import Document
 from docling.document_converter import PdfParser
 
 
-def ingest_pdf(path: str) -> Document:
+def ingest_pdf(pdf_path: str) -> Document:
     """
     Ingest a PDF report using Docling.
 
     Args:
-        path (str): Path to the PDF file.
+        pdf_path (str): Path to the PDF file.
 
     Returns:
         Document: A Docling Document object representing the parsed PDF.
@@ -23,11 +23,11 @@ def ingest_pdf(path: str) -> Document:
         - The Document object can be chunked and queried for specific content.
         - Raises FileNotFoundError if the file does not exist.
     """
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"PDF file not found: {path}")
+    if not os.path.exists(pdf_path):
+        raise FileNotFoundError(f"PDF file not found: {pdf_path}")
 
     parser = PdfParser()
-    doc = parser.parse(path)
+    doc = parser.parse(pdf_path)
     return doc
 
 
