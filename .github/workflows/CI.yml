@@ -46,8 +46,9 @@ jobs:
           .\.venv\Scripts\python.exe -m flake8 . `
             --exclude=.venv `
             --exit-zero
-
+            
       - name: Run pytest
-        run: .venv\Scripts\python.exe -m pytest tests `
-          --tb=short --maxfail=1 --disable-warnings -q `
-          |\ echo "::error::Tests failed"
+        run: |
+          .\.venv\Scripts\python.exe -m pytest tests `
+            --tb=short --maxfail=1 --disable-warnings -q `
+            || echo "::error::Tests failed"
