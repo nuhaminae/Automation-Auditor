@@ -1,6 +1,6 @@
 # Automation Auditor
 
-[![CI](https://github.com/nuhaminae/Automation-Auditor/workflows/CI.yml/badge.svg)](https://github.com/nuhaminae/Automation-Auditor/workflows/CI.yml)
+[![CI](https://github.com/nuhaminae/Automation-Auditor/actions/workflows/CI.yml/badge.svg)](https://github.com/nuhaminae/Automation-Auditor/actions/workflows/CI.yml)
 ![Black Formatting](https://img.shields.io/badge/code%20style-black-000000.svg)
 ![isort Imports](https://img.shields.io/badge/imports-isort-blue.svg)
 ![Flake8 Lint](https://img.shields.io/badge/lint-flake8-yellow.svg)
