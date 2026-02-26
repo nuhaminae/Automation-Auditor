@@ -1,7 +1,12 @@
 # src/graph.py
+# This module defines the complete LangGraph pipeline for the Automaton Auditor.
+# It wires together all nodes (detectives, judges, chief justice) into a cohesive workflow
+
 from langgraph.graph import StateGraph
 
 from src.nodes.detectives import doc_analyst_node, repo_investigator_node
+from src.nodes.judges import defense_node, prosecutor_node, techlead_node
+from src.nodes.justice import chief_justice_node
 from src.state import AgentState, AuditReport
 
 
@@ -12,6 +17,8 @@ def build_auditor_graph() -> StateGraph:
     Workflow:
         1. Detectives (RepoInvestigator, DocAnalyst) run in parallel (fan-out).
         2. EvidenceAggregator collects all evidence (fan-in).
+        3. Judges (Prosecutor, Defense, TechLead) run in parallel on the evidence.
+        4. ChiefJusticeNode synthesises opinions into a final AuditReport.
 
     Returns:
         StateGraph: Configured LangGraph pipeline for the Automaton Auditor.
@@ -31,10 +38,40 @@ def build_auditor_graph() -> StateGraph:
 
     graph.add_node("EvidenceAggregator", evidence_aggregator)
 
+    # --- Judges ---
+    graph.add_node("Prosecutor", prosecutor_node)
+    graph.add_node("Defense", defense_node)
+    graph.add_node("TechLead", techlead_node)
+
+    def opinions_aggregator(state: AgentState) -> AgentState:
+        """
+        Aggregates JudicialOpinions from all judges.
+        """
+        # Opinions are appended via reducers in AgentState
+        return state
+
+    graph.add_node("OpinionsAggregator", opinions_aggregator)
+
+    # --- Chief Justice ---
+    graph.add_node("ChiefJustice", chief_justice_node)
+
     # --- Wiring ---
     # Detectives fan-out -> EvidenceAggregator
     graph.add_edge("RepoInvestigator", "EvidenceAggregator")
     graph.add_edge("DocAnalyst", "EvidenceAggregator")
+
+    # EvidenceAggregator fan-out -> Judges
+    graph.add_edge("EvidenceAggregator", "Prosecutor")
+    graph.add_edge("EvidenceAggregator", "Defense")
+    graph.add_edge("EvidenceAggregator", "TechLead")
+
+    # Judges fan-in -> OpinionsAggregator
+    graph.add_edge("Prosecutor", "OpinionsAggregator")
+    graph.add_edge("Defense", "OpinionsAggregator")
+    graph.add_edge("TechLead", "OpinionsAggregator")
+
+    # OpinionsAggregator -> ChiefJustice
+    graph.add_edge("OpinionsAggregator", "ChiefJustice")
 
     return graph
 
@@ -48,7 +85,7 @@ def run_audit(repo_url: str, pdf_path: str) -> AuditReport:
         pdf_path (str): Path to the PDF report.
 
     Returns:
-        AuditReport: Partially synthesised audit report.
+        AuditReport: Final synthesised audit report.
     """
     graph = build_auditor_graph()
     initial_state: AgentState = {
@@ -57,7 +94,7 @@ def run_audit(repo_url: str, pdf_path: str) -> AuditReport:
         "rubric_dimensions": [],
         "evidences": {},
         "opinions": [],
-        "partial_report": None,
+        "final_report": None,
     }
-    partial_state = graph.run(initial_state)
-    return partial_state["partial_report"]
+    final_state = graph.run(initial_state)
+    return final_state["final_report"]
