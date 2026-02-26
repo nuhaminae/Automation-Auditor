@@ -7,6 +7,10 @@ import tempfile
 from typing import Dict, List
 
 
+class RepoError(Exception):
+    """Custom exception for repository analysis errors."""
+
+
 def clone_repository(repo_url: str) -> str:
     """
     Clone a GitHub repository into a sandboxed temporary directory.
@@ -19,17 +23,22 @@ def clone_repository(repo_url: str) -> str:
 
     Notes:
         - Uses tempfile.TemporaryDirectory for isolation.
-        - Raises subprocess.CalledProcessError if git clone fails.
+        - Raises RepoError if git clone fails.
     """
     # Create a temporary directory for cloning
     temp_dir = tempfile.mkdtemp()
-    # Run cloned repository using subprocess
-    subprocess.run(
-        ["git", "clone", repo_url, temp_dir],
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
+    try:
+        # Run cloned repository using subprocess
+        subprocess.run(
+            ["git", "clone", repo_url, temp_dir],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+    except subprocess.CalledProcessError as e:
+        raise RepoError(
+            f"Failed to clone repository {repo_url}: {e.stderr.decode()}"
+        ) from e
     return temp_dir
 
 
@@ -47,20 +56,29 @@ def extract_git_history(repo_path: str) -> List[Dict[str, str]]:
     Notes:
         - Runs 'git log --pretty=format' to capture commit metadata.
         - Useful for forensic analysis of development progression.
+        - Raises RepoError if git log fails.
     """
-    result = subprocess.run(
-        ["git", "-C", repo_path, "log", "--pretty=format:%H|%s|%cI", "--reverse"],
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
+    try:
+        result = subprocess.run(
+            ["git", "-C", repo_path, "log", "--pretty=format:%H|%s|%cI", "--reverse"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+    except subprocess.CalledProcessError as e:
+        raise RepoError(f"Failed to extract git history: {e.stderr}") from e
+
     commits = []
     for line in result.stdout.splitlines():
-        commit_hash, message, timestamp = line.split("|", 2)
-        commits.append(
-            {"hash": commit_hash, "message": message, "timestamp": timestamp}
-        )
+        try:
+            commit_hash, message, timestamp = line.split("|", 2)
+            commits.append(
+                {"hash": commit_hash, "message": message, "timestamp": timestamp}
+            )
+        except ValueError:
+            # Skip malformed lines gracefully
+            continue
     return commits
 
 
@@ -80,9 +98,13 @@ def analyse_graph_structure(file_path: str) -> Dict[str, bool]:
     Notes:
         - Uses Python's AST module for robust parsing (not regex).
         - Helps detect orchestration fraud (linear vs parallel execution).
+        - Raises RepoError if the file cannot be read or parsed.
     """
-    with open(file_path, "r", encoding="utf-8") as f:
-        tree = ast.parse(f.read())
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            tree = ast.parse(f.read())
+    except (OSError, SyntaxError) as e:
+        raise RepoError(f"Failed to analyse graph structure in {file_path}: {e}") from e
 
     stategraph_found = False
     parallel_edges = False
