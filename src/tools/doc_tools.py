@@ -4,11 +4,10 @@
 import os
 from typing import Dict, List
 
-from docling.datamodel.document import Document
-from docling.document_converter import PdfParser
+from docling_core.types.doc import DoclingDocument
+from docling.document_converter import StandardPdfPipeline
 
-
-def ingest_pdf(pdf_path: str) -> Document:
+def ingest_pdf(pdf_path: str) -> DoclingDocument:
     """
     Ingest a PDF report using Docling.
 
@@ -16,27 +15,28 @@ def ingest_pdf(pdf_path: str) -> Document:
         pdf_path (str): Path to the PDF file.
 
     Returns:
-        Document: A Docling Document object representing the parsed PDF.
+        DoclingDocument: A Docling Document object representing the parsed PDF.
 
     Notes:
         - Uses Docling's PdfParser for robust PDF parsing.
-        - The Document object can be chunked and queried for specific content.
+        - The DoclingDocument object can be chunked and queried for specific content.
         - Raises FileNotFoundError if the file does not exist.
     """
     if not os.path.exists(pdf_path):
         raise FileNotFoundError(f"PDF file not found: {pdf_path}")
 
-    parser = PdfParser()
-    doc = parser.parse(pdf_path)
-    return doc
+    pipeline = StandardPdfPipeline()
+    result = pipeline.convert(pdf_path)
 
+    # result.document is the DoclingDocument
+    return result.document
 
-def chunk_document(doc: Document, chunk_size: int = 500) -> List[str]:
+def chunk_document(doc: DoclingDocument, chunk_size: int = 500) -> List[str]:
     """
     Split a parsed PDF document into text chunks for querying.
 
     Args:
-        doc (Document): Parsed Docling Document object.
+        doc (DoclingDocument): Parsed Docling Document object.
         chunk_size (int): Maximum number of characters per chunk.
 
     Returns:
@@ -65,7 +65,7 @@ def query_document(chunks: List[str], keyword: str) -> List[str]:
     Notes:
         - Case-insensitive search.
         - Useful for verifying deep understanding of concepts like
-          'Dialectical Synthesis' or 'Fan-In/Fan-Out'.
+            'Dialectical Synthesis' or 'Fan-In/Fan-Out'.
     """
     results = []
     for chunk in chunks:
