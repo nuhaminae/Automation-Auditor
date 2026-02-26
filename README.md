@@ -56,10 +56,13 @@ AUTOMATION-AUDITOR/
 │   ├── nodes/
 │   │   └── detectives.py            # Node definitions for detectiive layer
 │   ├── tools/
+│   │   ├── __init__.py
 │   │   ├── doc_tools.py             # Tools for document processing
 │   │   └── repo_tools.py            # Tools for repository analysis
-│   ├── graph.py
-│   └── main.py
+│   ├── __init__.py
+│   ├── graph.py                     # StateGraph definition and orchestration logic
+│   ├── main.py                      # Entry point for running the workflow
+│   └── state.py                     # State management and evidence aggregation logic
 ├── tests/                           # Test suite
 │   └── test_dummy.py                # Placeholder test file
 ├── .env                             # Environment variables (not committed)
@@ -120,10 +123,10 @@ python -m src/main.py <repo_url> <pdf_path>
 
 The current submission demonstrates Detectives wired in parallel (fan‑out) and converging at EvidenceAggregator (fan‑in).
 
-``` mermaid
+```mermaid
 graph TD
-    A[RepoInvestigator] --> C[EvidenceAggregator]
-    B[DocAnalyst] --> C[EvidenceAggregator]
+    A[RepoInvestigator] -->|commits, graph_flags| C[EvidenceAggregator]
+    B[DocAnalyst] -->|keywords, cross_refs| C[EvidenceAggregator]
 ```
 
 The project is still on going. Check the [commit history](https://github.com/nuhaminae/Automation-Auditor/).
