@@ -23,7 +23,7 @@ def repo_investigator_node(state: AgentState) -> Evidence:
     Returns:
         Evidence: Structured evidence object with findings.
     """
-    repo_url = state["repo_url"]
+    repo_url = state.repo_url
     repo_path = repo_tools.clone_repository(repo_url)
     commits = repo_tools.extract_git_history(repo_path)
     graph_flags = repo_tools.analyse_graph_structure(f"{repo_path}/src/graph.py")
@@ -54,7 +54,7 @@ def doc_analyst_node(state: AgentState) -> Evidence:
     Returns:
         Evidence: Structured evidence object with findings.
     """
-    pdf_path = state["pdf_path"]
+    pdf_path = state.pdf_path
     doc = doc_tools.ingest_pdf(pdf_path)
     chunks = doc_tools.chunk_document(doc)
 
@@ -101,4 +101,6 @@ def build_detective_graph() -> StateGraph:
 
     # Wiring: fan-out detectives -> fan-in aggregator
     graph.add_edge("RepoInvestigator", "EvidenceAggregator")
-    graph.add
+    graph.add_edge("DocAnalyst", "EvidenceAggregator")
+
+    return graph
