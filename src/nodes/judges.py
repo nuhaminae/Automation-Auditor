@@ -1,4 +1,4 @@
-# src/tools/judges.py
+# src/nodes/judges.py
 # This module defines the three judge personas (Prosecutor, Defense, Tech Lead)
 # each returning structured `JudicialOpinion` objects.
 
@@ -24,21 +24,19 @@ def prosecutor_node(state: AgentState) -> JudicialOpinion:
         state (AgentState): Current agent state containing evidence.
 
     Returns:
-        JudicialOpinion: Structured opinion object with score, argument, and citations.
+        JudicialOpinion: Structured opinion object with score, argu, and citations.
     """
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", "You are the Prosecutor. Trust no one. Assume vibe coding."),
-            (
-                "user",
-                f"Evaluate evidence: {state['evidences']}. "
-                "Apply rubric strictly."
-                "Return JSON with "
-                "judge, criterion_id, score, argument, cited_evidence.",
-            ),
-        ]
-    )
-    return judicial_parser.parse(prompt.format_prompt().to_string())
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are the Prosecutor. Trust no one. Assume vibe coding."),
+        (
+            "user",
+            "Evaluate evidence: {evidences}. "
+            "Apply rubric strictly. "
+            "Return JSON with judge, criterion_id, score, argument, cited_evidence.",
+        ),
+    ])
+    formatted = prompt.format_prompt(evidences=state.evidences)
+    return judicial_parser.parse(formatted.to_string())
 
 
 def defense_node(state: AgentState) -> JudicialOpinion:
@@ -54,21 +52,19 @@ def defense_node(state: AgentState) -> JudicialOpinion:
         state (AgentState): Current agent state containing evidence.
 
     Returns:
-        JudicialOpinion: Structured opinion object with score, argument, and citations.
+        JudicialOpinion: Structured opinion object with score, argu, and citations.
     """
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", "You are the Defense Attorney. Reward effort and intent."),
-            (
-                "user",
-                f"Evaluate evidence: {state['evidences']}. "
-                "Look for signs of deep thought or iteration. "
-                "Return JSON with "
-                "judge, criterion_id, score, argument, cited_evidence.",
-            ),
-        ]
-    )
-    return judicial_parser.parse(prompt.format_prompt().to_string())
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are the Defense Attorney. Reward effort and intent."),
+        (
+            "user",
+            "Evaluate evidence: {evidences}. "
+            "Look for signs of deep thought or iteration. "
+            "Return JSON with judge, criterion_id, score, argument, cited_evidence.",
+        ),
+    ])
+    formatted = prompt.format_prompt(evidences=state.evidences)
+    return judicial_parser.parse(formatted.to_string())
 
 
 def techlead_node(state: AgentState) -> JudicialOpinion:
@@ -84,21 +80,16 @@ def techlead_node(state: AgentState) -> JudicialOpinion:
         state (AgentState): Current agent state containing evidence.
 
     Returns:
-        JudicialOpinion: Structured opinion object with score, argument, and citations.
+        JudicialOpinion: Structured opinion object with score, argu, and citations.
     """
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                "You are the Tech Lead. Focus on practicality and maintainability.",
-            ),
-            (
-                "user",
-                f"Evaluate evidence: {state['evidences']}. "
-                "Ignore vibe and struggle."
-                "Return JSON with "
-                "judge, criterion_id, score, argument, cited_evidence.",
-            ),
-        ]
-    )
-    return judicial_parser.parse(prompt.format_prompt().to_string())
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are the Tech Lead. Focus on practicality and maintainability."),
+        (
+            "user",
+            "Evaluate evidence: {evidences}. "
+            "Ignore vibe and struggle. "
+            "Return JSON with judge, criterion_id, score, argument, cited_evidence.",
+        ),
+    ])
+    formatted = prompt.format_prompt(evidences=state.evidences)
+    return judicial_parser.parse(formatted.to_string())
