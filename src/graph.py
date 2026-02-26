@@ -56,6 +56,10 @@ def build_auditor_graph() -> StateGraph:
     graph.add_node("ChiefJustice", chief_justice_node)
 
     # --- Wiring ---
+    # Entry point: set both RepoInvestigator and DocAnalyst as starting nodes
+    graph.set_entry_point("RepoInvestigator")
+    graph.set_entry_point("DocAnalyst")
+
     # Detectives fan-out -> EvidenceAggregator
     graph.add_edge("RepoInvestigator", "EvidenceAggregator")
     graph.add_edge("DocAnalyst", "EvidenceAggregator")
@@ -88,13 +92,14 @@ def run_audit(repo_url: str, pdf_path: str) -> AuditReport:
         AuditReport: Final synthesised audit report.
     """
     graph = build_auditor_graph()
-    initial_state: AgentState = {
-        "repo_url": repo_url,
-        "pdf_path": pdf_path,
-        "rubric_dimensions": [],
-        "evidences": {},
-        "opinions": [],
-        "final_report": None,
-    }
-    final_state = graph.run(initial_state)
+    app = graph.compile()  # compile before running
+    initial_state = AgentState(
+        repo_url=repo_url,
+        pdf_path=pdf_path,
+        rubric_dimensions=[],
+        evidences={},
+        opinions=[],
+        final_report=None,
+    )
+    final_state = app.invoke(initial_state.model_dump())
     return final_state["final_report"]
