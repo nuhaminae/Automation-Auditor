@@ -1,6 +1,6 @@
 # src/tools/judges.py
 # This module defines the three judge personas (Prosecutor, Defense, Tech Lead)
-# each returning structured `JudicialOpinion` objects. 
+# each returning structured `JudicialOpinion` objects.
 
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
