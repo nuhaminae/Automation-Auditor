@@ -61,7 +61,8 @@ def chief_justice_node(state: AgentState) -> AuditReport:
     # Guard against division by zero if no criteria results
     overall_score = (
         sum(cr.final_score for cr in criteria_results) / len(criteria_results)
-        if criteria_results else 0
+        if criteria_results
+        else 0
     )
 
     return AuditReport(
