@@ -24,6 +24,7 @@ dependencies = [
     "isort>=8.0.0",
     "flake8>=7.3.0",
     "docker>=7.1.0",
+    "huggingface-hub[hf-xet]>=0.36.2",
 ]
 
 [tool.black]
