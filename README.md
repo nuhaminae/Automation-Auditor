@@ -103,7 +103,7 @@ uv sync
 Run the partial audit workflow with:
 
 ```bash
-python src/main.py <repo_url> <pdf_path>
+python -m src/main.py <repo_url> <pdf_path>
 ```
 
 - **Input**:  
