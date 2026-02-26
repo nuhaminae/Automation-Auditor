@@ -1,6 +1,6 @@
 # src/graph.py
 # This module defines the complete LangGraph pipeline for the Automaton Auditor.
-# It wires together all nodes (detectives, judges, chief justice) into a cohesive workflow
+# It wires together all nodes into a cohesive workflow.
 
 from langgraph.graph import StateGraph
 
