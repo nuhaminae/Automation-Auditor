@@ -2,12 +2,22 @@
 # DocAnalyst (detective) tools for parsing and analysing PDF reports using Docling.
 
 import os
+import warnings
+from pathlib import Path
 from typing import Dict, List
 
+from docling.document_converter import DocumentConverter
 from docling_core.types.doc import DoclingDocument
-from docling.document_converter import StandardPdfPipeline
 
-def ingest_pdf(pdf_path: str) -> DoclingDocument:
+# Ignore all DeprecationWarnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+
+class DocError(Exception):
+    """Custom exception for document analysis errors."""
+
+
+def ingest_pdf(pdf_path: str) -> str:
     """
     Ingest a PDF report using Docling.
 
@@ -15,40 +25,47 @@ def ingest_pdf(pdf_path: str) -> DoclingDocument:
         pdf_path (str): Path to the PDF file.
 
     Returns:
-        DoclingDocument: A Docling Document object representing the parsed PDF.
+        str: Extracted plain text from the PDF.
 
     Notes:
-        - Uses Docling's PdfParser for robust PDF parsing.
-        - The DoclingDocument object can be chunked and queried for specific content.
+        - Uses Docling's DocumentConverter for robust PDF parsing.
         - Raises FileNotFoundError if the file does not exist.
+        - Raises DocError if conversion fails or returns empty text.
     """
     if not os.path.exists(pdf_path):
         raise FileNotFoundError(f"PDF file not found: {pdf_path}")
 
-    pipeline = StandardPdfPipeline()
-    result = pipeline.convert(pdf_path)
+    converter = DocumentConverter()
+    try:
+        result = converter.convert(Path(pdf_path))
+        doc: DoclingDocument = result.document
+        text = doc.export_to_text()
+        if not text or text.strip() == "":
+            raise DocError(f"Docling returned empty text for {pdf_path}")
+        return text
+    except Exception as e:
+        raise DocError(f"Failed to ingest PDF {pdf_path}: {e}") from e
 
-    # result.document is the DoclingDocument
-    return result.document
 
-def chunk_document(doc: DoclingDocument, chunk_size: int = 500) -> List[str]:
+def chunk_document(text: str, chunk_size: int = 500) -> List[str]:
     """
-    Split a parsed PDF document into text chunks for querying.
+    Split extracted PDF text into chunks for querying.
 
     Args:
-        doc (DoclingDocument): Parsed Docling Document object.
+        text (str): Extracted plain text from the PDF.
         chunk_size (int): Maximum number of characters per chunk.
 
     Returns:
-        List[str]: List of text chunks extracted from the document.
+        List[str]: List of text chunks.
 
     Notes:
         - Helps prevent context overflow when querying large PDFs.
         - Default chunk size is 500 characters.
+        - Raises DocError if text is empty.
     """
-    text = doc.text_content
-    chunks = [text[i : i + chunk_size] for i in range(0, len(text), chunk_size)]
-    return chunks
+    if not text or text.strip() == "":
+        raise DocError("No text provided to chunk.")
+    return [text[i : i + chunk_size] for i in range(0, len(text), chunk_size)]
 
 
 def query_document(chunks: List[str], keyword: str) -> List[str]:
@@ -65,13 +82,12 @@ def query_document(chunks: List[str], keyword: str) -> List[str]:
     Notes:
         - Case-insensitive search.
         - Useful for verifying deep understanding of concepts like
-            'Dialectical Synthesis' or 'Fan-In/Fan-Out'.
+          'Dialectical Synthesis' or 'Fan-In/Fan-Out'.
+        - Raises DocError if chunks list is empty.
     """
-    results = []
-    for chunk in chunks:
-        if keyword.lower() in chunk.lower():
-            results.append(chunk)
-    return results
+    if not chunks:
+        raise DocError("No chunks provided for query.")
+    return [chunk for chunk in chunks if keyword.lower() in chunk.lower()]
 
 
 def cross_reference_paths(chunks: List[str], repo_files: List[str]) -> Dict[str, bool]:
@@ -88,7 +104,10 @@ def cross_reference_paths(chunks: List[str], repo_files: List[str]) -> Dict[str,
     Notes:
         - Flags hallucinations when the report cites non-existent files.
         - Example: "src/nodes/judges.py" → True if exists, False if hallucinated.
+        - Raises DocError if chunks list is empty.
     """
+    if not chunks:
+        raise DocError("No chunks provided for cross-reference.")
     mentioned_paths = []
     for chunk in chunks:
         for word in chunk.split():
