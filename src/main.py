@@ -10,15 +10,22 @@ def main():
     pdf_path = sys.argv[2]
 
     # Build initial state
-    state = AgentState(repo_url=repo_url, pdf_path=pdf_path, evidences=[], opinions=[])
+    state = {
+        "repo_url": repo_url,
+        "pdf_path": pdf_path,
+        "rubric_dimensions": [],
+        "evidences": {},
+        "opinions": [],
+        "final_report": None,
+    }
 
     # Load graph
     graph = build_auditor_graph()
 
     # Run graph
-    result = graph.invoke(state)
+    final_state = graph.run(state)
 
-    print(result)
+    print(final_state["final_report"])
 
 
 if __name__ == "__main__":
