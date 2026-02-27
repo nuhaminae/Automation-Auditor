@@ -56,7 +56,10 @@ AUTOMATION-AUDITOR/
 ├── .vscode/
 │   └── mcp.json
 ├── reports/
+│   ├── final_verdict.json           # Final judgement report (to be generated)
 │   └── interim_report.pdf           # Interim report document
+├── rubrics/
+│   └── rubric.json                  # Rubric defining evaluation criteria
 ├── src/                             # Script
 │   ├── nodes/
 │   │   └── detectives.py            # Node definitions for detectiive layer
@@ -69,7 +72,10 @@ AUTOMATION-AUDITOR/
 │   ├── main.py                      # Entry point for running the workflow
 │   └── state.py                     # State management and evidence aggregation logic
 ├── tests/                           # Test suite
-│   └── test_dummy.py                # Placeholder test file
+│   ├── __init__.py
+│   ├── test_doc_tools.py            # Tests for document processing tools
+│   ├── test_dummy.py                # Placeholder test file
+│   └── test_repo_tools.py           # Tests for repository analysis tools
 ├── .env                             # Environment variables (not committed)
 ├── .env.example                     # Example environment variables
 ├── .flake8                          # Flake8 configuration
@@ -109,6 +115,7 @@ uv sync
 ## Usage
 
 ```bash
+# For Ollama users,
 # If not already running, start the Ollama server in a separate terminal
 ollama serve
 ```
@@ -138,6 +145,20 @@ The current submission demonstrates Detectives wired in parallel (fan‑out) and
 graph TD
     A[RepoInvestigator] -->|commits, graph_flags| C[EvidenceAggregator]
     B[DocAnalyst] -->|keywords, cross_refs| C[EvidenceAggregator]
+
+    %% Evidence fan-out to judges
+    C -->|EvidenceBundle + confidence| D[Prosecutor]
+    C -->|EvidenceBundle + confidence| E[Defence]
+    C -->|EvidenceBundle + confidence| F[TechLead]
+
+    %% Judges fan-in
+    D -->|JudicialOpinion| G[OpinionsAggregator]
+    E -->|JudicialOpinion| G[OpinionsAggregator]
+    F -->|JudicialOpinion| G[OpinionsAggregator]
+
+    %% Final synthesis
+    G -->|SynthesisedReport| H[ChiefJustice]
+
 ```
 
 The project is still on going. Check the [commit history](https://github.com/nuhaminae/Automation-Auditor/).
