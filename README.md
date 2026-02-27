@@ -15,11 +15,16 @@ This interim submission demonstrates the Detective Layer, with RepoInvestigator 
 
 ## Table of Contents
 
-- [Key Features](#key-features)  
-- [Project Structure](#project-structure)  
-- [Installation](#installation)  
-- [Usage](#usage)  
-- [Project Status](#project-status)  
+- [Automation Auditor](#automation-auditor)
+  - [Project Overview](#project-overview)
+  - [Table of Contents](#table-of-contents)
+  - [Key Features](#key-features)
+  - [Project Structure](#project-structure)
+  - [Installation](#installation)
+    - [Prerequisites](#prerequisites)
+    - [Setup](#setup)
+  - [Usage](#usage)
+  - [Project Status](#project-status)
 
 ---
 
@@ -106,12 +111,13 @@ uv sync
 Run the partial audit workflow with:
 
 ```bash
-python -m src/main.py <repo_url> <pdf_path>
+python -m src/main.py <repo_url> <pdf_path> <rubric_path>
 ```
 
 - **Input**:  
   - `repo_url`: GitHub repository to audit  
-  - `pdf_path`: Path to the PDF report  
+  - `pdf_path`: Path to the PDF report
+  - `rubric_path`: Path to the rubric JSON file  
 
 - **Output**:  
   - A **partial report** containing evidence collected by Detectives.  
