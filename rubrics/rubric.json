@@ -1,0 +1,96 @@
+{
+  "rubric_metadata": {
+    "rubric_name": "Week 2: The Automaton Auditor Self-Evaluation",
+    "grading_target": "Week 2 Auditor Repository & Architectural Report",
+    "version": "3.0.0"
+  },
+  "dimensions": [
+    {
+      "id": "git_forensic_analysis",
+      "name": "Git Forensic Analysis",
+      "target_artifact": "github_repo",
+      "forensic_instruction": "Run 'git log --oneline --reverse' on the cloned repository. Count commits, check progression story, extract messages and timestamps.",
+      "success_pattern": "More than 3 commits showing clear progression.",
+      "failure_pattern": "Single 'init' commit or bulk upload."
+    },
+    {
+      "id": "state_management_rigor",
+      "name": "State Management Rigor",
+      "target_artifact": "github_repo",
+      "forensic_instruction": "Scan for src/state.py or equivalent. Use AST to find BaseModel/TypedDict. Verify reducers operator.add/ior.",
+      "success_pattern": "AgentState uses TypedDict/BaseModel with reducers.",
+      "failure_pattern": "Plain dicts, no Pydantic, no reducers."
+    },
+    {
+      "id": "graph_orchestration",
+      "name": "Graph Orchestration Architecture",
+      "target_artifact": "github_repo",
+      "forensic_instruction": "Scan src/graph.py for StateGraph builder. Verify parallel fan-out/fan-in for Detectives and Judges.",
+      "success_pattern": "Two distinct parallel fan-out/fan-in patterns.",
+      "failure_pattern": "Purely linear flow, no synchronization."
+    },
+    {
+      "id": "safe_tool_engineering",
+      "name": "Safe Tool Engineering",
+      "target_artifact": "github_repo",
+      "forensic_instruction": "Scan src/tools for git clone logic. Verify sandboxing with tempfile, subprocess.run with error handling.",
+      "success_pattern": "Sandboxed git ops, no raw os.system.",
+      "failure_pattern": "Raw os.system clone, no error handling."
+    },
+    {
+      "id": "structured_output_enforcement",
+      "name": "Structured Output Enforcement",
+      "target_artifact": "github_repo",
+      "forensic_instruction": "Verify judges use structured output bound to JudicialOpinion schema.",
+      "success_pattern": "All Judge calls use structured output with validation.",
+      "failure_pattern": "Plain prompts, freeform text, no validation."
+    },
+    {
+      "id": "judicial_nuance",
+      "name": "Judicial Nuance and Dialectics",
+      "target_artifact": "github_repo",
+      "forensic_instruction": "Verify distinct prompts for Prosecutor, Defense, TechLead.",
+      "success_pattern": "Three distinct personas with conflicting philosophies.",
+      "failure_pattern": "Single grader or colluding prompts."
+    },
+    {
+      "id": "chief_justice_synthesis",
+      "name": "Chief Justice Synthesis Engine",
+      "target_artifact": "github_repo",
+      "forensic_instruction": "Verify deterministic conflict resolution rules in ChiefJusticeNode.",
+      "success_pattern": "Hardcoded rules, dissent summary, Markdown output.",
+      "failure_pattern": "LLM averaging, no rules, no dissent."
+    },
+    {
+      "id": "theoretical_depth",
+      "name": "Theoretical Depth (Documentation)",
+      "target_artifact": "pdf_report",
+      "forensic_instruction": "Search PDF for Dialectical Synthesis, Fan-In/Fan-Out, Metacognition, State Synchronization.",
+      "success_pattern": "Terms explained in detail with implementation.",
+      "failure_pattern": "Buzzwords only, no explanation."
+    },
+    {
+      "id": "report_accuracy",
+      "name": "Report Accuracy (Cross-Reference)",
+      "target_artifact": "pdf_report",
+      "forensic_instruction": "Cross-reference file paths in PDF with repo evidence.",
+      "success_pattern": "All paths verified, claims match code.",
+      "failure_pattern": "Hallucinated paths, contradictions."
+    },
+    {
+      "id": "swarm_visual",
+      "name": "Architectural Diagram Analysis",
+      "target_artifact": "pdf_images",
+      "forensic_instruction": "Classify diagrams, verify parallel branches shown.",
+      "success_pattern": "Diagram matches StateGraph with parallelism.",
+      "failure_pattern": "Generic linear diagram or missing."
+    }
+  ],
+  "synthesis_rules": {
+    "security_override": "Confirmed security flaws cap score at 3.",
+    "fact_supremacy": "Detective facts override Judge opinions.",
+    "functionality_weight": "TechLead confirmation carries highest weight.",
+    "dissent_requirement": "Variance >2 requires dissent summary.",
+    "variance_re_evaluation": "Variance >2 triggers re-evaluation."
+  }
+}
