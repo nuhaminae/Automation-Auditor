@@ -108,20 +108,25 @@ uv sync
 
 ## Usage
 
+```bash
+# If not already running, start the Ollama server in a separate terminal
+ollama serve
+```
+
 Run the partial audit workflow with:
 
 ```bash
-python -m src/main.py <repo_url> <pdf_path> <rubric_path>
+python -m src/main.py <repo_url> <pdf_path> <rubric_path> [output_path]
 ```
 
 - **Input**:  
-  - `repo_url`: GitHub repository to audit  
-  - `pdf_path`: Path to the PDF report
-  - `rubric_path`: Path to the rubric JSON file  
+  - `repo_url`: GitHub repository to audit
+  - `pdf_path`: Path to the PDF report           (e.g., `reports/interim_report.pdf`)
+  - `rubric_path`: Path to the rubric JSON file  (e.g., `rubrics/rubric.json`)
+  - `output_path` (optional): Path to save judgement report (e.g., `reports/verdict_report.json`)
 
 - **Output**:  
-  - A **partial report** containing evidence collected by Detectives.  
-  - Judges and Chief Justice synthesis will be added in the final submission.  
+  - A **Report** containing evidence collected by Detectives, Judges opinions, and Chief Justice synthesis.  
 
 ---
 
