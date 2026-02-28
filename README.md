@@ -148,7 +148,7 @@ graph TD
 
     %% Evidence fan-out to judges
     C -->|EvidenceBundle + confidence| D[Prosecutor]
-    C -->|EvidenceBundle + confidence| E[Defence]
+    C -->|EvidenceBundle + confidence| E[Defense]
     C -->|EvidenceBundle + confidence| F[TechLead]
 
     %% Judges fan-in
