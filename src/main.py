@@ -2,18 +2,18 @@
 import json
 import os
 import sys
-import requests  # to support loading rubric/report from HTTPS
 import tempfile  # to handle temporary files safely
 
+import requests  # to support loading rubric/report from HTTPS
 from dotenv import load_dotenv
 
 # --- Load environment variables from .env ---
 load_dotenv()
 
 # --- Disable LangSmith tracing explicitly (otherwise it will use .env)---
-os.environ["LANGCHAIN_TRACING_V2"] = "false"
-os.environ.pop("LANGCHAIN_API_KEY", None)
-os.environ.pop("LANGSMITH_WORKSPACE_ID", None)
+#os.environ["LANGCHAIN_TRACING_V2"] = "false"
+#os.environ.pop("LANGCHAIN_API_KEY", None)
+#os.environ.pop("LANGSMITH_WORKSPACE_ID", None)
 
 from src.graph import build_auditor_graph
 from src.nodes.justice import format_audit_report
@@ -102,11 +102,33 @@ def main():
     final_state = app.invoke(state.model_dump())
     report = final_state["final_report"]
 
-    # --- Print Markdown version to console ---
-    print(format_audit_report(report))
+    # --- Post-run check for VisionInspector evidence ---
+    if "Visual Forensics" in final_state["evidences"]:
+        print("[INFO] Visual evidence collected by VisionInspector.")
+    else:
+        print(
+            "[INFO] No visual evidence collected (VisionInspector disabled or found nothing)."
+        )
 
-    # --- Optionally save JSON verdict if output_path is provided ---
+    # --- Print Markdown version to console ---
+    markdown_report = format_audit_report(report)
+
+    # Add VisionInspector status to Markdown
+    if "Visual Forensics" in final_state["evidences"]:
+        vision_status_md = "\n\n### VisionInspector Status\nVisual evidence was inspected and collected."
+    else:
+        vision_status_md = "\n\n### VisionInspector Status\nNo visual evidence considered (disabled or none found)."
+
+    markdown_report += vision_status_md
+    print(markdown_report)
+
     if output_path:
+        # Save Markdown report
+        md_path = output_path if output_path.endswith(".md") else output_path + ".md"
+        with open(md_path, "w") as f:
+            f.write(markdown_report)
+
+        # Save JSON verdict
         verdict = {
             "repo_url": state.repo_url,
             "executive_summary": report.executive_summary,
@@ -127,7 +149,6 @@ def main():
                         }
                         for op in cr.judge_opinions
                     ],
-                    # split remediation string into list of lines
                     "remediation": cr.remediation.strip().split("\n"),
                     "dissent_summary": cr.dissent_summary,
                 }
@@ -138,8 +159,17 @@ def main():
                 k: [ev.model_dump() for ev in v]
                 for k, v in final_state["evidences"].items()
             },
+            # --- New field for VisionInspector status ---
+            "vision_inspector_status": (
+                "enabled and evidence collected"
+                if "Visual Forensics" in final_state["evidences"]
+                else "disabled or no evidence"
+            ),
         }
-        with open(output_path, "w") as f:
+        json_path = (
+            output_path if output_path.endswith(".json") else output_path + ".json"
+        )
+        with open(json_path, "w") as f:
             json.dump(verdict, f, indent=2)
 
     # --- Cleanup temporary files (PDFs downloaded from URLs) ---
