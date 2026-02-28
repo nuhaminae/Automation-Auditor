@@ -192,3 +192,119 @@ def fetch_commit_details(repo_full_name: str, sha: str) -> dict:
     if resp.status_code != 200:
         raise RepoError(f"Failed to fetch commit {sha}: {resp.text}")
     return resp.json()
+
+
+def fetch_contributors(repo_full_name: str) -> List[dict]:
+    """
+    Fetch contributor statistics from GitHub API.
+
+    Args:
+        repo_full_name (str): e.g., "owner/repo".
+
+    Returns:
+        List[dict]: Each contributor with 'login', 'contributions'.
+
+    Notes:
+        - Shows how many commits each contributor made.
+        - Useful for detecting single-author repos vs. collaborative projects.
+    """
+    token = get_github_token()
+    headers = {"Authorization": f"token {token}"} if token else {}
+    url = f"https://api.github.com/repos/{repo_full_name}/contributors"
+    resp = requests.get(url, headers=headers)
+    if resp.status_code != 200:
+        raise RepoError(f"Failed to fetch contributors: {resp.text}")
+    return resp.json()
+
+
+def fetch_pull_requests(repo_full_name: str, state: str = "all") -> List[dict]:
+    """
+    Fetch pull requests from GitHub API.
+
+    Args:
+        repo_full_name (str): e.g., "owner/repo".
+        state (str): 'open', 'closed', or 'all'.
+
+    Returns:
+        List[dict]: PR metadata including 'title', 'user', 'state', 'merged_at'.
+
+    Notes:
+        - Useful for evaluating collaboration quality.
+        - Merged PRs with review comments show active teamwork.
+    """
+    token = get_github_token()
+    headers = {"Authorization": f"token {token}"} if token else {}
+    url = f"https://api.github.com/repos/{repo_full_name}/pulls?state={state}"
+    resp = requests.get(url, headers=headers)
+    if resp.status_code != 200:
+        raise RepoError(f"Failed to fetch pull requests: {resp.text}")
+    return resp.json()
+
+
+def fetch_pr_reviews(repo_full_name: str, pr_number: int) -> List[dict]:
+    """
+    Fetch review comments for a specific PR.
+
+    Args:
+        repo_full_name (str): e.g., "owner/repo".
+        pr_number (int): Pull request number.
+
+    Returns:
+        List[dict]: Review comments with 'user', 'body', 'state'.
+
+    Notes:
+        - Helps measure quality of collaboration (discussion, feedback).
+    """
+    token = get_github_token()
+    headers = {"Authorization": f"token {token}"} if token else {}
+    url = f"https://api.github.com/repos/{repo_full_name}/pulls/{pr_number}/reviews"
+    resp = requests.get(url, headers=headers)
+    if resp.status_code != 200:
+        raise RepoError(f"Failed to fetch PR reviews: {resp.text}")
+    return resp.json()
+
+
+def score_collaboration(
+    contributors: List[dict],
+    pulls: List[dict],
+    reviews: Dict[int, List[dict]],
+    commits: List[Dict[str, str]],
+) -> int:
+    """
+    Compute a collaboration quality score (1–5).
+    - Contributors: diversity of authors
+    - Pull Requests: activity and merges
+    - Reviews: presence and depth of comments
+    - Commits: quality of commit messages
+    """
+    score = 1  # baseline
+
+    # Contributor diversity
+    if len(contributors) > 1:
+        score += 1
+    if len(contributors) >= 3:
+        score += 1
+
+    # Pull request activity
+    merged_prs = sum(1 for pr in pulls if pr.get("merged_at"))
+    if merged_prs > 0:
+        score += 1
+    if merged_prs >= 3:
+        score += 1
+
+    # Review quality (depth of comments)
+    review_texts = [rev.get("body", "") for rlist in reviews.values() for rev in rlist]
+    avg_review_length = (
+        sum(len(txt) for txt in review_texts) / len(review_texts) if review_texts else 0
+    )
+    if avg_review_length > 50:  # heuristic: substantive comments
+        score += 1
+
+    # Commit message quality
+    avg_commit_length = (
+        sum(len(c["message"]) for c in commits) / len(commits) if commits else 0
+    )
+    if avg_commit_length > 20:  # heuristic: descriptive commits
+        score += 1
+
+    return min(score, 5)
