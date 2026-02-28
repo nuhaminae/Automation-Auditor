@@ -37,7 +37,8 @@ def chief_justice_node(state: AgentState) -> AuditReport:
             * Dissent requirement: variance > 2 requires dissent summary.
             * Variance re-evaluation: variance > 2 triggers re-evaluation.
         - Generate a structured AuditReport in Markdown-ready format.
-
+        - Add a dedicated Collaboration criterion based on RepoInvestigator evidence.
+        
     Args:
         state (AgentState): Current agent state containing judge opinions and rubric.
 
@@ -45,7 +46,6 @@ def chief_justice_node(state: AgentState) -> AuditReport:
         AuditReport: Final synthesised audit report with
                         scores, dissent summaries, and remediation plan.
     """
-    # opinions: List[JudicialOpinion] = state.opinions
     opinions: List[JudicialOpinion] = deduplicate_all_opinions(state.opinions)
     rubric_dimensions: List[Dict] = state.rubric_dimensions or []
     synthesis_rules: Dict = getattr(state, "synthesis_rules", {})
@@ -53,11 +53,19 @@ def chief_justice_node(state: AgentState) -> AuditReport:
     criteria_results: List[CriterionResult] = []
     rubric_lookup = {dim["id"]: dim for dim in rubric_dimensions}
 
-    # --- NEW: inspect RepoInvestigator evidence ---
+    # Inspect RepoInvestigator evidence
     repo_evidence = next(
-        (ev for ev in state.evidences if ev.goal == "Repository Forensics"), None
+        (
+            ev
+            for ev_list in state.evidences.values()
+            for ev in ev_list
+            if ev.goal == "Repository Forensics"
+        ),
+        None,
     )
+
     enriched_commits = []
+    repo_content = {}
     if repo_evidence:
         try:
             repo_content = repo_evidence.content or {}
@@ -71,15 +79,16 @@ def chief_justice_node(state: AgentState) -> AuditReport:
         if opinion.criterion_id:
             grouped.setdefault(opinion.criterion_id, []).append(opinion)
 
+    # Normal rubric criteria
     for criterion_id, judge_opinions in grouped.items():
         raw_score = resolve_conflict(judge_opinions, synthesis_rules)
         final_score = normalise_score(raw_score)
 
-        # --- NEW: forensic override based on enriched commits ---
+        authors = set()
         if enriched_commits:
             authors = {c.get("author") for c in enriched_commits if "author" in c}
             if len(authors) == 1 and synthesis_rules.get("collaboration_override"):
-                final_score = min(final_score, 3)  # cap score if only one contributor
+                final_score = min(final_score, 3)
 
         dissent_summary: Optional[str] = None
         scores = [op.score for op in judge_opinions]
@@ -95,7 +104,6 @@ def chief_justice_node(state: AgentState) -> AuditReport:
         failure_pattern = dimension_meta.get("failure_pattern", "")
         forensic_instruction = dimension_meta.get("forensic_instruction", "")
 
-        # --- Remediation advice based on rubric and forensic hints ---
         remediation = f"To improve {dimension_name}:\n"
         if dimension_meta.get("success_pattern"):
             remediation += f"- Aim for: {dimension_meta['success_pattern']}.\n"
@@ -104,24 +112,8 @@ def chief_justice_node(state: AgentState) -> AuditReport:
         if forensic_instruction:
             remediation += f"- Next step: {forensic_instruction}.\n"
 
-        # Add forensic hints
         if enriched_commits and len(authors) == 1:
             remediation += "- Collaboration issue detected: only one contributor in commit history.\n"
-
-        # Add detective evidence examples
-        state_evidence = next(
-            (ev for ev in state.evidences if ev.goal == "State Management"), None
-        )
-        if state_evidence and not state_evidence.content.get("reducers_used", True):
-            remediation += (
-                "- Detective evidence: No reducers detected in state management.\n"
-            )
-
-        graph_evidence = next(
-            (ev for ev in state.evidences if ev.goal == "Graph Orchestration"), None
-        )
-        if graph_evidence and not graph_evidence.content.get("parallel_edges", True):
-            remediation += "- Detective evidence: Graph orchestration is linear, no parallel fan-out/fan-in.\n"
 
         criteria_results.append(
             CriterionResult(
@@ -130,6 +122,37 @@ def chief_justice_node(state: AgentState) -> AuditReport:
                 final_score=final_score,
                 judge_opinions=judge_opinions,
                 dissent_summary=dissent_summary,
+                remediation=remediation,
+            )
+        )
+
+    # Collaboration Criterion (separate)
+    collab_evidence = repo_content.get("collaboration", {})
+    if collab_evidence:
+        collab_score = collab_evidence.get("collaboration_score", 1)
+        remediation = "To improve Collaboration:\n"
+        if collab_score <= 2:
+            remediation += (
+                "- Invite contributors or encourage PRs to diversify input.\n"
+            )
+        elif collab_score == 3:
+            remediation += (
+                "- Improve commit message clarity and encourage small, atomic PRs.\n"
+            )
+        elif collab_score == 4:
+            remediation += "- Add more substantive PR reviews to strengthen teamwork.\n"
+        elif collab_score == 5:
+            remediation += (
+                "- Excellent contributor diversity, PR activity, and review quality.\n"
+            )
+
+        criteria_results.append(
+            CriterionResult(
+                dimension_id="collaboration",
+                dimension_name="Collaboration & Contribution Quality",
+                final_score=collab_score,
+                judge_opinions=[],  # no judge opinions here
+                dissent_summary=None,
                 remediation=remediation,
             )
         )
@@ -145,8 +168,7 @@ def chief_justice_node(state: AgentState) -> AuditReport:
         executive_summary="Automated audit completed. See detailed criteria below.",
         overall_score=overall_score,
         criteria=criteria_results,
-        remediation_plan="Apply remediation steps per criterion to improve "
-        "architecture and compliance.",
+        remediation_plan="Apply remediation steps per criterion to improve architecture and compliance.",
     )
     return {"final_report": report}
 
