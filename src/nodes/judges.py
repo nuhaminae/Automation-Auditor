@@ -47,7 +47,19 @@ else:
     )
 
 
-def prosecutor_node(state: AgentState) -> JudicialOpinion:
+def deduplicate_opinions(opinions):
+    """Remove duplicate opinions"""
+    seen = set()
+    unique = []
+    for op in opinions:
+        key = (op.judge, op.criterion_id)
+        if key not in seen:
+            seen.add(key)
+            unique.append(op)
+    return unique
+
+
+def prosecutor_node(state: AgentState) -> dict:
     """
     LangGraph node: Prosecutor (Critical Lens).
 
@@ -60,22 +72,23 @@ def prosecutor_node(state: AgentState) -> JudicialOpinion:
         state (AgentState): Current agent state containing evidence.
 
     Returns:
-        JudicialOpinion: Structured opinion object with score, argument, and citations.
+        dict: Structured opinion object with score, argument, and citations.
     """
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", "You are the Prosecutor. Trust no one."),
             (
                 "user",
-                "Evaluate evidence: {evidences}. "
-                "Use the following rubric dimensions: {rubric_dimensions}. "
-                "Return ONLY a valid JSON object with the following fields: "
+                "Evaluate the following evidence: {evidences}. "
+                "For EACH rubric dimension in {rubric_dimensions}, produce one JSON object. "
+                "Each object must have the following fields: "
                 "judge (must be exactly 'Prosecutor'), "
-                "criterion_id (must match one of the rubric dimension IDs), "
+                "criterion_id (must match the rubric dimension ID), "
                 "score (integer between 0 and 10), "
                 "argument (string), "
-                "cited_evidence (list of strings). "
-                "Do not include any text outside the JSON.",
+                "cited_evidence (list of strings, citing detective evidence only). "
+                "Return ONLY a valid JSON array of objects, one per rubric dimension. "
+                "Do not include any text outside the JSON array.",
             ),
         ]
     )
@@ -89,12 +102,12 @@ def prosecutor_node(state: AgentState) -> JudicialOpinion:
     parsed = chain.invoke(
         {"evidences": state.evidences, "rubric_dimensions": state.rubric_dimensions}
     )
+    opinions = [JudicialOpinion.model_validate(op) for op in parsed]
+    opinions = deduplicate_opinions(opinions)
+    return {"opinions": opinions}
 
-    opinion = JudicialOpinion.model_validate(parsed)
-    return {"opinions": [opinion]}
 
-
-def defense_node(state: AgentState) -> JudicialOpinion:
+def defense_node(state: AgentState) -> dict:
     """
     LangGraph node: Defense Attorney (Optimistic Lens).
 
@@ -107,21 +120,23 @@ def defense_node(state: AgentState) -> JudicialOpinion:
         state (AgentState): Current agent state containing evidence.
 
     Returns:
-        JudicialOpinion: Structured opinion object with score, argument, and citations.
+        dict: Structured opinion object with score, argument, and citations.
     """
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", "You are the Defense Attorney. Advocate fiercely."),
             (
                 "user",
-                "Evaluate evidence: {evidences}. "
-                "Use the following rubric dimensions: {rubric_dimensions}. "
-                "Return ONLY a valid JSON object with the following fields: "
+                "Evaluate the following evidence: {evidences}. "
+                "For EACH rubric dimension in {rubric_dimensions}, produce one JSON object. "
+                "Each object must have the following fields: "
                 "judge (must be exactly 'Defense'), "
-                "criterion_id (must match one of the rubric dimension IDs), "
-                "score (integer between 0 and 10), argument (string), "
-                "cited_evidence (list of strings). "
-                "Do not include any text outside the JSON.",
+                "criterion_id (must match the rubric dimension ID), "
+                "score (integer between 0 and 10), "
+                "argument (string), "
+                "cited_evidence (list of strings, citing detective evidence only). "
+                "Return ONLY a valid JSON array of objects, one per rubric dimension. "
+                "Do not include any text outside the JSON array.",
             ),
         ]
     )
@@ -135,12 +150,12 @@ def defense_node(state: AgentState) -> JudicialOpinion:
     parsed = chain.invoke(
         {"evidences": state.evidences, "rubric_dimensions": state.rubric_dimensions}
     )
+    opinions = [JudicialOpinion.model_validate(op) for op in parsed]
+    opinions = deduplicate_opinions(opinions)
+    return {"opinions": opinions}
 
-    opinion = JudicialOpinion.model_validate(parsed)
-    return {"opinions": [opinion]}
 
-
-def techlead_node(state: AgentState) -> JudicialOpinion:
+def techlead_node(state: AgentState) -> dict:
     """
     LangGraph node: TechLead (Pragmatic Lens).
 
@@ -153,21 +168,23 @@ def techlead_node(state: AgentState) -> JudicialOpinion:
         state (AgentState): Current agent state containing evidence.
 
     Returns:
-        JudicialOpinion: Structured opinion object with score, argument, and citations.
+        dict: Structured opinion object with score, argument, and citations.
     """
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", "You are the TechLead. Be precise and technical."),
             (
                 "user",
-                "Evaluate evidence: {evidences}. Focus on technical merit.\n"
-                "Use the following rubric dimensions: {rubric_dimensions}.\n"
-                "Return ONLY a valid JSON object with the following fields:\n"
+                "Evaluate the following evidence: {evidences}. Focus on technical merit. "
+                "For EACH rubric dimension in {rubric_dimensions}, produce one JSON object. "
+                "Each object must have the following fields: "
                 "judge (must be exactly 'TechLead'), "
-                "criterion_id (must match one of the rubric dimension IDs), "
-                "score (integer between 0 and 10), argument (string), "
-                "cited_evidence (list of strings). "
-                "Do not include any text outside the JSON.",
+                "criterion_id (must match the rubric dimension ID), "
+                "score (integer between 0 and 10), "
+                "argument (string), "
+                "cited_evidence (list of strings, citing detective evidence only). "
+                "Return ONLY a valid JSON array of objects, one per rubric dimension. "
+                "Do not include any text outside the JSON array.",
             ),
         ]
     )
@@ -181,5 +198,5 @@ def techlead_node(state: AgentState) -> JudicialOpinion:
     parsed = chain.invoke(
         {"evidences": state.evidences, "rubric_dimensions": state.rubric_dimensions}
     )
-    opinion = JudicialOpinion.model_validate(parsed)
-    return {"opinions": [opinion]}
+    opinions = [JudicialOpinion.model_validate(op) for op in parsed]
+    return {"opinions": opinions}
