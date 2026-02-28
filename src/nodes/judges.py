@@ -19,7 +19,7 @@ llm = None
 openai_key = os.getenv("OPENAI_API_KEY")
 google_key = os.getenv("GOOGLE_API_KEY")
 ollama_url = os.getenv("OLLAMA_BASE_URL")
-ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2:latest") 
+ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2:latest")
 
 # Priority: OpenAI → Gemini → Ollama
 if openai_key and not openai_key.startswith("your_"):
@@ -36,7 +36,7 @@ elif ollama_url or ollama_model:
     llm = ChatOllama(
         model=ollama_model,
         temperature=0,
-        base_url=ollama_url or "http://localhost:11434"
+        base_url=ollama_url or "http://localhost:11434",
     )
     print(f"Using Ollama LLM ({ollama_model})")
 
@@ -45,6 +45,7 @@ else:
         "No supported LLM API key found.\n"
         "Please set OPENAI_API_KEY, GOOGLE_API_KEY, or OLLAMA_BASE_URL in .env"
     )
+
 
 def prosecutor_node(state: AgentState) -> JudicialOpinion:
     """
@@ -64,26 +65,34 @@ def prosecutor_node(state: AgentState) -> JudicialOpinion:
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", "You are the Prosecutor. Trust no one."),
-            ("user",
-            "Evaluate evidence: {evidences}. "
-            "Use the following rubric dimensions: {rubric_dimensions}. "
-            "Return ONLY a valid JSON object with the following fields: "
-            "judge (must be exactly 'Prosecutor'), "
-            "criterion_id (must match one of the rubric dimension IDs), "
-            "score (integer between 0 and 10), "
-            "argument (string), "
-            "cited_evidence (list of strings). "
-            "Do not include any text outside the JSON.")
+            (
+                "user",
+                "Evaluate evidence: {evidences}. "
+                "Use the following rubric dimensions: {rubric_dimensions}. "
+                "Return ONLY a valid JSON object with the following fields: "
+                "judge (must be exactly 'Prosecutor'), "
+                "criterion_id (must match one of the rubric dimension IDs), "
+                "score (integer between 0 and 10), "
+                "argument (string), "
+                "cited_evidence (list of strings). "
+                "Do not include any text outside the JSON.",
+            ),
         ]
     )
-    #raw_output = (prompt | llm).invoke({"evidences": state.evidences, "rubric_dimensions": state.rubric_dimensions})
-    #print("Raw LLM output (Prosecutor):", raw_output)
-
+    """
+    raw_output = (prompt | llm).invoke(
+        {"evidences": state.evidences, "rubric_dimensions": state.rubric_dimensions}
+    )
+    print("Raw LLM output (Prosecutor):", raw_output)
+    """
     chain = prompt | llm | judicial_parser
-    parsed = chain.invoke({"evidences": state.evidences, "rubric_dimensions": state.rubric_dimensions})
-    
+    parsed = chain.invoke(
+        {"evidences": state.evidences, "rubric_dimensions": state.rubric_dimensions}
+    )
+
     opinion = JudicialOpinion.model_validate(parsed)
     return {"opinions": [opinion]}
+
 
 def defense_node(state: AgentState) -> JudicialOpinion:
     """
@@ -103,23 +112,33 @@ def defense_node(state: AgentState) -> JudicialOpinion:
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", "You are the Defense Attorney. Advocate fiercely."),
-            ("user",
-            "Evaluate evidence: {evidences}. "
-            "Use the following rubric dimensions: {rubric_dimensions}. "
-            "Return ONLY a valid JSON object with the following fields: "
-            "judge (must be exactly 'Defense'), criterion_id (must match one of the rubric dimension IDs), "
-            "score (integer between 0 and 10), argument (string), "
-            "cited_evidence (list of strings). Do not include any text outside the JSON.")
+            (
+                "user",
+                "Evaluate evidence: {evidences}. "
+                "Use the following rubric dimensions: {rubric_dimensions}. "
+                "Return ONLY a valid JSON object with the following fields: "
+                "judge (must be exactly 'Defense'), "
+                "criterion_id (must match one of the rubric dimension IDs), "
+                "score (integer between 0 and 10), argument (string), "
+                "cited_evidence (list of strings). "
+                "Do not include any text outside the JSON.",
+            ),
         ]
     )
-    #raw_output = (prompt | llm).invoke({"evidences": state.evidences, "rubric_dimensions": state.rubric_dimensions})
-    #print("Raw LLM output (Defense):", raw_output)
-
+    """
+    raw_output = (prompt | llm).invoke(
+        {"evidences": state.evidences, "rubric_dimensions": state.rubric_dimensions}
+    )
+    print("Raw LLM output (Defense):", raw_output)
+    """
     chain = prompt | llm | judicial_parser
-    parsed = chain.invoke({"evidences": state.evidences, "rubric_dimensions": state.rubric_dimensions})
+    parsed = chain.invoke(
+        {"evidences": state.evidences, "rubric_dimensions": state.rubric_dimensions}
+    )
 
     opinion = JudicialOpinion.model_validate(parsed)
     return {"opinions": [opinion]}
+
 
 def techlead_node(state: AgentState) -> JudicialOpinion:
     """
@@ -139,20 +158,28 @@ def techlead_node(state: AgentState) -> JudicialOpinion:
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", "You are the TechLead. Be precise and technical."),
-            ("user",
-            "Evaluate evidence: {evidences}. Focus on technical merit.\n"
-            "Use the following rubric dimensions: {rubric_dimensions}.\n"
-            "Return ONLY a valid JSON object with the following fields:\n"
-            "judge (must be exactly 'TechLead'), criterion_id (must match one of the rubric dimension IDs), "
-            "score (integer between 0 and 10), argument (string), "
-            "cited_evidence (list of strings). Do not include any text outside the JSON.")
+            (
+                "user",
+                "Evaluate evidence: {evidences}. Focus on technical merit.\n"
+                "Use the following rubric dimensions: {rubric_dimensions}.\n"
+                "Return ONLY a valid JSON object with the following fields:\n"
+                "judge (must be exactly 'TechLead'), "
+                "criterion_id (must match one of the rubric dimension IDs), "
+                "score (integer between 0 and 10), argument (string), "
+                "cited_evidence (list of strings). "
+                "Do not include any text outside the JSON.",
+            ),
         ]
     )
-    #raw_output = (prompt | llm).invoke({"evidences": state.evidences, "rubric_dimensions": state.rubric_dimensions})
-    #print("Raw LLM output (TechLead):", raw_output)
-
+    """
+    raw_output = (prompt | llm).invoke(
+        {"evidences": state.evidences, "rubric_dimensions": state.rubric_dimensions}
+    )
+    print("Raw LLM output (TechLead):", raw_output)
+    """
     chain = prompt | llm | judicial_parser
-    parsed = chain.invoke({"evidences": state.evidences, "rubric_dimensions": state.rubric_dimensions})
-
+    parsed = chain.invoke(
+        {"evidences": state.evidences, "rubric_dimensions": state.rubric_dimensions}
+    )
     opinion = JudicialOpinion.model_validate(parsed)
     return {"opinions": [opinion]}
