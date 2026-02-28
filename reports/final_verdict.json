@@ -2,7 +2,7 @@
   "repo_url": "https://github.com/nuhaminae/Automation-Auditor",
   "executive_summary": "Automated audit completed. See detailed criteria below.",
   "overall_score": 4.0,
-  "scoring_note": "Judge scores are on a 0 to 10 scale. Final scores are normalized to a 1 to 5 scale.",
+  "scoring_note": "Judge scores are on a 0 to 10 scale. Final scores are normalised to a 1to 5 scale.",
   "criteria": [
     {
       "dimension_id": "git_forensic_analysis",
