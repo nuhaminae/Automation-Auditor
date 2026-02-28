@@ -130,10 +130,11 @@ python -m src/main.py <repo_url> <pdf_path> <rubric_path> [output_path]
   - `repo_url`: GitHub repository to audit
   - `pdf_path`: Path to the PDF report local or git  (e.g., `reports/interim_report.pdf`, or `https://raw.githubusercontent.com/nuhaminae/Automation-Auditor/main/reports/interim_report.pdf`)
   - `rubric_path`: Path to the rubric JSON file local or git (e.g., `rubrics/rubric.json` or `https://raw.githubusercontent.com/nuhaminae/Automation-Auditor/main/rubrics/rubric.json`)
-  - `output_path` (optional): Path to save judgement report (e.g., `reports/verdict_report.json`)
+  - `output_path` (optional): Path to save judgement report in both MD and json (e.g., `reports/verdict_report`)
 
 - **Output**:  
-  - A **Report** containing evidence collected by Detectives, Judges opinions, and Chief Justice synthesis.  
+  - A **Report** containing evidence collected by Detectives, Judges opinions, and Chief Justice synthesis.
+  - The report is printed in Markdown format to the console and optionally saved to a file if `output_path` is provided.  
 
 ---
 
