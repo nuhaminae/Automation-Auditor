@@ -94,3 +94,8 @@ class AgentState(BaseModel):
     ] = []
 
     final_report: Optional[AuditReport] = None
+
+    # Detective outputs (optional fields for node results)
+    RepoInvestigator: Optional[Evidence] = None
+    DocAnalyst: Optional[Evidence] = None
+    VisionInspector: Optional[Evidence] = None
