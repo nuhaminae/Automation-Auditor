@@ -72,7 +72,7 @@ def main():
             "repo_url": state.repo_url,
             "executive_summary": report.executive_summary,
             "overall_score": report.overall_score,
-            "scoring_note": "Judge scores are on a 0 to 10 scale. Final scores are normalised to a 1to 5 scale.",
+            "scoring_note": "Judge scores are on a 0 to 10 scale. Final scores are normalised to a 1 to 5 scale.",
             "criteria": [
                 {
                     "dimension_id": cr.dimension_id,
