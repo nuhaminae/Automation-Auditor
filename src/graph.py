@@ -2,9 +2,15 @@
 # This module defines the complete LangGraph pipeline for the Automaton Auditor.
 # It wires together all nodes into a cohesive workflow.
 
+import os
+
 from langgraph.graph import StateGraph
 
-from src.nodes.detectives import doc_analyst_node, repo_investigator_node
+from src.nodes.detectives import (
+    doc_analyst_node,
+    repo_investigator_node,
+    vision_inspector_node,
+)
 from src.nodes.judges import defense_node, prosecutor_node, techlead_node
 from src.nodes.justice import chief_justice_node
 from src.state import AgentState, AuditReport
@@ -26,17 +32,53 @@ def build_auditor_graph() -> StateGraph:
     graph = StateGraph(AgentState)
 
     # --- Detectives ---
+    enable_vision = os.getenv("ENABLE_VISION_INSPECTOR", "false").lower() == "true"
+
+    # Log the status of VisionInspector
+    if enable_vision:
+        print("[INFO] VisionInspector enabled.")
+    else:
+        print(
+            "[INFO] VisionInspector disabled (set ENABLE_VISION_INSPECTOR=true in .env to enable)."
+        )
+
     graph.add_node("RepoInvestigator", repo_investigator_node)
     graph.add_node("DocAnalyst", doc_analyst_node)
+    if enable_vision:
+        graph.add_node("VisionInspector", vision_inspector_node)
 
     def evidence_aggregator(state: AgentState) -> AgentState:
         """
         Aggregates evidence from RepoInvestigator and DocAnalyst.
+        Ensures their Evidence objects are merged into state.evidences.
         """
-        # Evidence objects are already appended via reducers in AgentState
+        evidences = getattr(state, "evidences", {})
+
+        if hasattr(state, "RepoInvestigator") and state.RepoInvestigator:
+            evidences.setdefault("Repository Forensics", []).append(
+                state.RepoInvestigator
+            )
+
+        if hasattr(state, "DocAnalyst") and state.DocAnalyst:
+            evidences.setdefault("PDF Report Forensics", []).append(state.DocAnalyst)
+
+        if (
+            enable_vision
+            and hasattr(state, "VisionInspector")
+            and state.VisionInspector
+        ):
+            evidences.setdefault("Visual Forensics", []).append(state.VisionInspector)
+
+        state.evidences = evidences
         return state
 
     graph.add_node("EvidenceAggregator", evidence_aggregator)
+
+    # -- Detectives fan-out -> EvidenceAggregator
+    graph.add_edge("RepoInvestigator", "EvidenceAggregator")
+    graph.add_edge("DocAnalyst", "EvidenceAggregator")
+    if enable_vision:
+        graph.add_edge("VisionInspector", "EvidenceAggregator")
 
     # --- Judges ---
     graph.add_node("Prosecutor", prosecutor_node)
@@ -56,9 +98,11 @@ def build_auditor_graph() -> StateGraph:
     graph.add_node("ChiefJustice", chief_justice_node)
 
     # --- Wiring ---
-    # Entry point: set both RepoInvestigator and DocAnalyst as starting nodes
+    # Entry point: set both RepoInvestigator, DocAnalyst and VisionInspector as starting nodes
     graph.set_entry_point("RepoInvestigator")
     graph.set_entry_point("DocAnalyst")
+    if enable_vision:
+        graph.set_entry_point("VisionInspector")
 
     # Detectives fan-out -> EvidenceAggregator
     graph.add_edge("RepoInvestigator", "EvidenceAggregator")
