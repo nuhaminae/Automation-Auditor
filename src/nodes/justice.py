@@ -195,7 +195,7 @@ def format_audit_report(report: AuditReport) -> str:
     lines.append("")
     lines.append(f"**Executive Summary:** {report.executive_summary}")
     lines.append(
-        "**Note:** Judge scores are on a 0–10 scale. Final scores are normalised to a 1–5 scale."
+        "**Note:** Judge scores are on a 0 to 10 scale. Final scores are normalised to a 1 to 5 scale."
     )
     lines.append(f"**Overall Score:** {report.overall_score:.2f}")
     lines.append("")
