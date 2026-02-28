@@ -100,3 +100,59 @@ def test_analyse_graph_structure_error(tmp_path):
     with pytest.raises(repo_tools.RepoError) as excinfo:
         repo_tools.analyse_graph_structure(str(file_path))
     assert "Failed to analyse graph structure" in str(excinfo.value)
+
+
+def test_fetch_repo_metadata_success(monkeypatch):
+    """Ensure fetch_repo_metadata returns JSON on success."""
+
+    class FakeResp:
+        status_code = 200
+
+        def json(self):
+            return {"full_name": "owner/repo", "stars": 42}
+
+    monkeypatch.setattr(repo_tools.requests, "get", lambda url, headers: FakeResp())
+
+    result = repo_tools.fetch_repo_metadata("owner/repo")
+    assert result["stars"] == 42
+
+
+def test_fetch_repo_metadata_error(monkeypatch):
+    """Ensure fetch_repo_metadata raises RepoError on failure."""
+
+    class FakeResp:
+        status_code = 404
+        text = "Not Found"
+
+    monkeypatch.setattr(repo_tools.requests, "get", lambda url, headers: FakeResp())
+
+    with pytest.raises(repo_tools.RepoError):
+        repo_tools.fetch_repo_metadata("owner/repo")
+
+
+def test_fetch_commit_details_success(monkeypatch):
+    """Ensure fetch_commit_details returns JSON on success."""
+
+    class FakeResp:
+        status_code = 200
+
+        def json(self):
+            return {"commit": {"author": {"name": "Alice"}}, "files": []}
+
+    monkeypatch.setattr(repo_tools.requests, "get", lambda url, headers: FakeResp())
+
+    result = repo_tools.fetch_commit_details("owner/repo", "abc123")
+    assert result["commit"]["author"]["name"] == "Alice"
+
+
+def test_fetch_commit_details_error(monkeypatch):
+    """Ensure fetch_commit_details raises RepoError on failure."""
+
+    class FakeResp:
+        status_code = 500
+        text = "Server Error"
+
+    monkeypatch.setattr(repo_tools.requests, "get", lambda url, headers: FakeResp())
+
+    with pytest.raises(repo_tools.RepoError):
+        repo_tools.fetch_commit_details("owner/repo", "abc123")
