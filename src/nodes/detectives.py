@@ -16,6 +16,7 @@ def repo_investigator_node(state: AgentState) -> Evidence:
         - Clone the target repository in a sandbox.
         - Extract git history for forensic analysis.
         - Analyse graph structure via AST parsing.
+        - Enrich commit history with GitHub API data if token is available.
 
     Args:
         state (AgentState): Current agent state containing repo_url.
@@ -28,13 +29,44 @@ def repo_investigator_node(state: AgentState) -> Evidence:
     commits = repo_tools.extract_git_history(repo_path)
     graph_flags = repo_tools.analyse_graph_structure(f"{repo_path}/src/graph.py")
 
+    # Try enrichment if token is present
+    token = repo_tools.get_github_token()
+    enriched_commits = []
+    if token:
+        # Derive "owner/repo" from URL
+        repo_full_name = repo_url.split("github.com/")[-1].rstrip(".git")
+        for c in commits:
+            try:
+                api_data = repo_tools.fetch_commit_details(repo_full_name, c["hash"])
+                enriched_commits.append(
+                    {
+                        **c,
+                        "author": api_data["commit"]["author"]["name"],
+                        "files_changed": len(api_data.get("files", [])),
+                        "additions": sum(
+                            f["additions"] for f in api_data.get("files", [])
+                        ),
+                        "deletions": sum(
+                            f["deletions"] for f in api_data.get("files", [])
+                        ),
+                    }
+                )
+            except repo_tools.RepoError:
+                enriched_commits.append(c)
+    else:
+        enriched_commits = commits
+
     return Evidence(
         goal="Repository Forensics",
         found=True,
-        content=str({"commits": commits, "graph_flags": graph_flags}),
+        content={"commits": enriched_commits, "graph_flags": graph_flags},
         location=repo_path,
-        rationale="Repo cloned and analysed successfully.",
-        confidence=0.9,
+        rationale=(
+            "Repo cloned, analysed, and enriched with GitHub API data."
+            if token
+            else "Repo cloned and analysed locally."
+        ),
+        confidence=0.9 if token else 0.85,
     )
 
 
@@ -68,7 +100,7 @@ def doc_analyst_node(state: AgentState) -> Evidence:
     return Evidence(
         goal="PDF Report Forensics",
         found=True,
-        content=str({"keywords": keyword_hits, "cross_refs": cross_refs}),
+        content={"keywords": keyword_hits, "cross_refs": cross_refs},
         location=pdf_path,
         rationale="PDF parsed and cross-referenced successfully.",
         confidence=0.85,
