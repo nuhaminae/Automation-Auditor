@@ -128,8 +128,8 @@ python -m src/main.py <repo_url> <pdf_path> <rubric_path> [output_path]
 
 - **Input**:  
   - `repo_url`: GitHub repository to audit
-  - `pdf_path`: Path to the PDF report           (e.g., `reports/interim_report.pdf`)
-  - `rubric_path`: Path to the rubric JSON file  (e.g., `rubrics/rubric.json`)
+  - `pdf_path`: Path to the PDF report local or git  (e.g., `reports/interim_report.pdf`, or `https://raw.githubusercontent.com/nuhaminae/Automation-Auditor/main/reports/interim_report.pdf`)
+  - `rubric_path`: Path to the rubric JSON file local or git (e.g., `rubrics/rubric.json` or `https://raw.githubusercontent.com/nuhaminae/Automation-Auditor/main/rubrics/rubric.json`)
   - `output_path` (optional): Path to save judgement report (e.g., `reports/verdict_report.json`)
 
 - **Output**:  
