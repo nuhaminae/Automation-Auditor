@@ -7,9 +7,42 @@
 
 ## Project Overview
 
-**Automation Auditor** is an AI "courtroom" designed to evaluate the quality of automation, pass judgement, and provide actionable feedback for improvement. It uses a structured framework to analyse automation scripts, identify strengths and weaknesses, and offer recommendations for enhancement. It has three layers: Detectives (data gathering), Judges (evaluation), and Chief Justice (synthesis).
+**Automation Auditor** is an AI “courtroom” designed to evaluate the quality of automation projects, pass judgement, and provide actionable feedback for improvement. It uses a structured framework to analyse repositories and reports, identify strengths and weaknesses, and offer recommendations for enhancement. The system is organised into three layers: **Detectives** (data gathering), **Judges** (evaluation), and the **Chief Justice** (synthesis).
 
-This interim submission demonstrates the Detective Layer, with RepoInvestigator and DocAnalyst running in parallel (fan‑out) and converging at EvidenceAggregator (fan‑in). Judges and Chief Justice nodes will be added in the final submission.
+This final submission demonstrates the complete pipeline. Detectives collect evidence in parallel, Judges deliberate with distinct philosophies, and the Chief Justice applies deterministic rules to synthesise a verdict. The output is a structured audit report in both Markdown and JSON formats, with remediation guidance.
+
+---
+
+## Key Features
+
+- **Detective Nodes**  
+  - **RepoInvestigator**: Clones the repository, extracts commit history, analyses orchestration in `src/graph.py`, and enriches evidence with GitHub API data.  
+  - **DocAnalyst**: Ingests the PDF report, chunks text, searches for rubric concepts (Dialectical Synthesis, Fan‑In/Fan‑Out, Metacognition), and cross‑references file paths.  
+  - **VisionInspector**: Extracts figures from the PDF and scans the repository for images, contributing to diagram analysis.  
+
+- **Judges**  
+  - **Prosecutor**: Critical lens, penalises flaws and orchestration gaps.  
+  - **Defence**: Optimistic lens, highlights creativity and intent.  
+  - **Tech Lead**: Pragmatic lens, focuses on technical viability and maintainability.  
+
+- **Chief Justice**  
+  - Synthesises conflicting opinions using deterministic rules defined in `rubric.json`.  
+  - Applies overrides for security flaws, prioritises detective facts, and ensures dissent summaries where variance is significant.  
+  - Produces a structured `AuditReport` with scores, remediation, and collaboration analysis.  
+
+- **StateGraph Orchestration**  
+  - Detectives run in parallel (fan‑out) and converge at the EvidenceAggregator (fan‑in).  
+  - Judges deliberate in parallel and converge at the OpinionsAggregator.  
+  - Chief Justice synthesises into the final report.  
+
+- **Structured Outputs**  
+  - All nodes return validated Pydantic models (`Evidence`, `JudicialOpinion`, `CriterionResult`, `AuditReport`).  
+  - Reports are generated in Markdown and JSON formats, ensuring both human readability and machine consumption.  
+
+- **Testing**  
+  - `tests/test_doc_tools.py` validates PDF ingestion, chunking, keyword search, and cross‑referencing.  
+  - `tests/test_repo_tools.py` validates repository cloning, commit history extraction, graph analysis, and GitHub API integration.  
+  - These tests ensure safe tool engineering and report accuracy.  
 
 ---
 
@@ -17,30 +50,15 @@ This interim submission demonstrates the Detective Layer, with RepoInvestigator 
 
 - [Automation Auditor](#automation-auditor)
   - [Project Overview](#project-overview)
-  - [Table of Contents](#table-of-contents)
   - [Key Features](#key-features)
+  - [Table of Contents](#table-of-contents)
   - [Project Structure](#project-structure)
   - [Installation](#installation)
     - [Prerequisites](#prerequisites)
     - [Setup](#setup)
   - [Usage](#usage)
+  - [Orchestration Diagram](#orchestration-diagram)
   - [Project Status](#project-status)
-
----
-
-## Key Features
-
-- **Detective Nodes**  
-  - **RepoInvestigator**: Clones the repository, extracts commit history, and analyses orchestration in `src/graph.py`.  
-  - **DocAnalyst**: Ingests the PDF report, chunks text, searches for rubric concepts (Fan‑In/Fan‑Out, Dialectical Synthesis), and cross‑references file paths.  
-
-- **Evidence Aggregation**  
-  - Evidence from both detectives is collected at the **EvidenceAggregator** node.  
-  - This demonstrates **fan‑out/fan‑in orchestration**, a core rubric requirement.  
-
-- **Partial StateGraph**  
-  - Only Detectives + EvidenceAggregator are wired.  
-  - Judges and Chief Justice will be added in the final submission.  
 
 ---
 
@@ -54,28 +72,35 @@ AUTOMATION-AUDITOR/
 │   └── copilot-instructions.md      # MCP instructions for GitHub Copilot
 ├── .venv/                           # Virtual environment (not committed)
 ├── .vscode/
-│   └── mcp.json
-├── reports/
-│   ├── final_verdict.json           # Final judgement report (to be generated)
-│   └── interim_report.pdf           # Interim report document
+│   └── mcp.json                     # MCP configuration for VSCode Copilot
+├── audit/                           # Automation audit reports
+│   ├── report_onself_generated.md 
+│   ├── report_onpeer_generated.md
+│   └── report_bypeer_received.pdf              
+├── reports/                         # Generated reports
+│   ├── final_report.pdf             
+│   └── interim_report.pdf           
 ├── rubrics/
 │   └── rubric.json                  # Rubric defining evaluation criteria
 ├── src/                             # Script
-│   ├── nodes/
-│   │   └── detectives.py            # Node definitions for detectiive layer
-│   ├── tools/
+│   ├── nodes/                       # Nodes for detectives, judges, and chief justice
+│   │   ├── detectives.py           
+│   │   ├── judges.py                
+│   │   └── chief_justice.py         
+│   ├── tools/                       # Tools for data processing and analysis  
 │   │   ├── __init__.py
-│   │   ├── doc_tools.py             # Tools for document processing
-│   │   └── repo_tools.py            # Tools for repository analysis
+│   │   ├── doc_tools.py             
+│   │   └── repo_tools.py            
+│   │   └── vision_tools.py          
 │   ├── __init__.py
 │   ├── graph.py                     # StateGraph definition and orchestration logic
 │   ├── main.py                      # Entry point for running the workflow
 │   └── state.py                     # State management and evidence aggregation logic
-├── tests/                           # Test suite
+├── tests/                           # Test suite for tools
 │   ├── __init__.py
-│   ├── test_doc_tools.py            # Tests for document processing tools
+│   ├── test_doc_tools.py            
 │   ├── test_dummy.py                # Placeholder test file
-│   └── test_repo_tools.py           # Tests for repository analysis tools
+│   └── test_repo_tools.py           
 ├── .env                             # Environment variables (not committed)
 ├── .env.example                     # Example environment variables
 ├── .flake8                          # Flake8 configuration
@@ -138,28 +163,44 @@ python -m src/main.py <repo_url> <pdf_path> <rubric_path> [output_path]
 
 ---
 
-## Project Status
-
-The current submission demonstrates Detectives wired in parallel (fan‑out) and converging at EvidenceAggregator (fan‑in).
+## Orchestration Diagram
 
 ```mermaid
 graph TD
-    A[RepoInvestigator] -->|commits, graph_flags| C[EvidenceAggregator]
-    B[DocAnalyst] -->|keywords, cross_refs| C[EvidenceAggregator]
+    S[__start__] -->  A[RepoInvestigator] 
+    S --> B[DocAnalyst]
+    S --> V[VisionInspector]
 
-    %% Evidence fan-out to judges
+    subgraph Detectives
+        A
+        B
+        V
+    end
+
+    A-->|commits, flags| C[EvidenceAggregator]
+    B -->|keywords, refs| C[EvidenceAggregator]
+    V -->|visual cues| C[EvidenceAggregator]
+
+    subgraph Judges
+        D[Prosecutor]
+        E[Defense]
+        F[TechLead]
+    end
+
     C -->|EvidenceBundle + confidence| D[Prosecutor]
     C -->|EvidenceBundle + confidence| E[Defense]
     C -->|EvidenceBundle + confidence| F[TechLead]
 
-    %% Judges fan-in
     D -->|JudicialOpinion| G[OpinionsAggregator]
     E -->|JudicialOpinion| G[OpinionsAggregator]
     F -->|JudicialOpinion| G[OpinionsAggregator]
 
-    %% Final synthesis
     G -->|SynthesisedReport| H[ChiefJustice]
-
+    H --> End[__end__]
 ```
 
-The project is still on going. Check the [commit history](https://github.com/nuhaminae/Automation-Auditor/).
+---
+
+## Project Status
+
+The project is completed. Check the [commit history](https://github.com/nuhaminae/Automation-Auditor/).
