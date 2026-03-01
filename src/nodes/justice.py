@@ -38,7 +38,7 @@ def chief_justice_node(state: AgentState) -> AuditReport:
             * Variance re-evaluation: variance > 2 triggers re-evaluation.
         - Generate a structured AuditReport in Markdown-ready format.
         - Add a dedicated Collaboration criterion based on RepoInvestigator evidence.
-        
+
     Args:
         state (AgentState): Current agent state containing judge opinions and rubric.
 
