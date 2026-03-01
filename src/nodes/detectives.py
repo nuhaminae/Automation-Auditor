@@ -221,4 +221,3 @@ def build_detective_graph() -> StateGraph:
         graph.add_edge("VisionInspector", "EvidenceAggregator")
 
     return graph
-    return graph
