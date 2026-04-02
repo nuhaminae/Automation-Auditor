@@ -148,7 +148,8 @@ ollama serve
 Run the partial audit workflow with:
 
 ```bash
-python -m src/main.py <repo_url> <pdf_path> <rubric_path> [output_path]
+python -m src.main <repo_url> <pdf_path> <rubric_path> [output_path]
+# Example RUN: python -m src.main https://github.com/nuhaminae/Automation-Auditor.git reports/interim_report.pdf rubrics/rubric.json
 ```
 
 - **Input**:  
